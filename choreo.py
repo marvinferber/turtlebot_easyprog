@@ -21,11 +21,11 @@ from turtlebot_easyprog import sensoren
 from turtlebot_easyprog import bewegen
 
 rospy.init_node('choreo', anonymous=True)
-
+# Bitte nachfolgend Code
 sensoren.beibumpercrash(bewegen.anhalten)
 bewegen.fahren(0.1,2.0)
 bewegen.drehen(0.5,1.0)
 bewegen.drehen(-0.5,1.0)
 sensoren.beitasteb0(bewegen.fahren)
-
+#######
 rospy.spin()
