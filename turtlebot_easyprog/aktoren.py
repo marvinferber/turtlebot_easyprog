@@ -18,11 +18,11 @@
 import rospy
 
 from kobuki_msgs.msg import Led
-from types import *
+#from types import *
 
 publisher = rospy.Publisher('/mobile_base/commands/led1', Led, queue_size=1)
 
-def led1(farbe):
+def led1(farbe = "rot"):
     led=Led()
     if farbe == "rot":
         led.value = 3 # red Led
@@ -37,4 +37,7 @@ def led1(farbe):
 
 if __name__ == '__main__':
     rospy.init_node('aktoren', anonymous=True)
-    led1("rot")
+    led1("grün")
+    led1("grün")
+    led1("grün")
+    rospy.spin()

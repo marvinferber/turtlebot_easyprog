@@ -100,55 +100,55 @@ def on_img(data):
       cv_image = bridge.imgmsg_to_cv2(data, "bgr8")
     except CvBridgeError as e:
       print(e)
-#    cv2.imshow("Image window", cv_image)
-#    cv2.waitKey(3)
-    print "Bild erhalten"
     bilderhalten = True
     global event
     event.set()
 
-def farbeistin0(farbe):
-    return farbeistin(farbe,0,160,0,213)
+def farbeistin0(farbe,pixel=5000):
+    return farbeistin(farbe,0,160,0,213,pixel)
 
-def farbeistin1(farbe):
-    return farbeistin(farbe,0,160,214,426)
+def farbeistin1(farbe,pixel=5000):
+    return farbeistin(farbe,0,160,214,426,pixel)
 
-def farbeistin2(farbe):
-    return farbeistin(farbe,0,160,427,640)
+def farbeistin2(farbe,pixel=5000):
+    return farbeistin(farbe,0,160,427,640,pixel)
 
-def farbeistin3(farbe):
-    return farbeistin(farbe,161,320,0,213)
+def farbeistin3(farbe,pixel=5000):
+    return farbeistin(farbe,161,320,0,213,pixel)
 
-def farbeistin4(farbe):
-    return farbeistin(farbe,161,320,214,426)
+def farbeistin4(farbe,pixel=5000):
+    return farbeistin(farbe,161,320,214,426,pixel)
 
-def farbeistin5(farbe):
-    return farbeistin(farbe,161,320,427,640)
+def farbeistin5(farbe,pixel=5000):
+    return farbeistin(farbe,161,320,427,640,pixel)
 
-def farbeistin6(farbe):
-    return farbeistin(farbe,321,480,0,213)
+def farbeistin6(farbe,pixel=5000):
+    return farbeistin(farbe,321,480,0,213,pixel)
 
-def farbeistin7(farbe):
-    return farbeistin(farbe,321,480,214,426)
+def farbeistin7(farbe,pixel=5000):
+    return farbeistin(farbe,321,480,214,426,pixel)
 
-def farbeistin8(farbe):
-    return farbeistin(farbe,321,480,427,640)
+def farbeistin8(farbe,pixel=5000):
+    return farbeistin(farbe,321,480,427,640,pixel)
 
-def farbeistin(farbe, startrow, endrow, startcol,endcol):
-    if farbe == "rot":
-        vergleichsfarbe = rot
-    elif farbe == "grün":
-        vergleichsfarbe = gruen
-    elif farbe == "blau":
-        vergleichsfarbe = blau
+def farbeistin(farbe, startrow, endrow, startcol, endcol, pixel):
+    if type(farbe) == 'str':
+        if farbe == "rot":
+            vergleichsfarbe = rot
+        elif farbe == "grün":
+            vergleichsfarbe = gruen
+        elif farbe == "blau":
+            vergleichsfarbe = blau
+        else:
+            raise ValueError(farbe+" ist keine bekannte Farbe! [rot, grün, blau]")
     else:
-        raise ValueError(farbe+" ist keine bekannte Farbe! [rot, grün, blau]")
+        vergleichsfarbe = numpy.array([farbe[0],farbe[1],farbe[2]])
     global bilderhalten
     bilderhalten = True
     global event
     event = threading.Event()
     global imgsubscriber
-    if imgsubscriber == False:
+    if (not 'imgsubscriber' in globals()) or (imgsubscriber == False):
         imgsubscriber = True
         rospy.Subscriber("/camera/rgb/image_raw", Image, on_img)
         print "Initialisiere Kamera für 2 Sekunden.."
@@ -162,39 +162,69 @@ def farbeistin(farbe, startrow, endrow, startcol,endcol):
     neuesbild = numpy.zeros([endrow-startrow, endcol-startcol, channels], numpy.uint8) 
     for i in range(startrow,endrow):
         for j in range(startcol,endcol):
-            if linalg.norm(cv_image[i,j] - vergleichsfarbe)<200:
-#            if cv_image[i,j][0]-vergleichsfarbe[0]>-100:
-                neuesbild[i-startrow,j-startcol] = [255,255,255]
+            if linalg.norm(cv_image[i,j] - vergleichsfarbe)<50:
+                neuesbild[i-startrow,j-startcol] = [vergleichsfarbe[0],vergleichsfarbe[1],vergleichsfarbe[2]]#[255,255,255]
                 count = count+1
             else:
-                neuesbild[i-startrow,j-startcol] = [0,0,0]
+                neuesbild[i-startrow,j-startcol] = cv_image[i,j]#[0,0,0]
     cv2.imshow(`startrow+startcol`, neuesbild)
-#    cv2.imshow("Image window", cv_image)
     cv2.waitKey(3)
     print count
-    if count > 20 :
+    if count > pixel :
         return True
     else:
         return False
 
+def farbhistogramm():
+    global bilderhalten
+    bilderhalten = True
+    global event
+    event = threading.Event()
+    global imgsubscriber
+    if (not 'imgsubscriber' in globals()) or (imgsubscriber == False):
+        imgsubscriber = True
+        rospy.Subscriber("/camera/rgb/image_raw", Image, on_img)
+        print "Initialisiere Kamera für 2 Sekunden.."
+        rospy.sleep(2.)
+    bilderhalten = False
+    event.wait()
+    # Farben und Bereiche prüfen
+    global cv_image
+    (rows,cols,channels) = cv_image.shape
+    gr=gb=gg=0
+    for i in range(161,320):
+        for j in range(214,426):
+            (r,g,b)=cv_image[i,j]
+            gr=gr+r
+            gg=gg+g
+            gb=gb+b
+    gesamt=(320-161)*(426-214)
+    gr=gr/gesamt
+    gg=gg/gesamt
+    gb=gb/gesamt
+    return (gr,gg,gb)
+    
+
 if __name__ == '__main__':
     rospy.init_node('sensoren', anonymous=True)
-    global imgsubscriber
-    imgsubscriber = False
-    beibumpercrash(test)
-    beitasteb0(test)
-    beitasteb1(test)
-    beitasteb2(test)
-    farbeistin0("rot")
-    print farbeistin0("blau")
-    print farbeistin1("blau")
-    print farbeistin2("blau")
-    print farbeistin3("blau")
-    print farbeistin4("blau")
-    print farbeistin5("blau")
-    print farbeistin6("blau")
-    print farbeistin7("blau")
-    print farbeistin8("blau")
+#    beibumpercrash(test)
+#    beitasteb0(test)
+#    beitasteb1(test)
+#    beitasteb2(test)
+#    farbeistin0("rot")
+    my = farbhistogramm()
+    print farbeistin0(my)
+    print farbeistin1(my)
+    print farbeistin2(my)
+    print farbeistin3(my)
+    print farbeistin4(my)
+    print farbeistin5(my)
+    print farbeistin6(my)
+    print farbeistin7(my)
+    print farbeistin8(my)
+
+#   print farbeistin4(my)
+#    print farbeistin4(my)
     rospy.spin()
 
 

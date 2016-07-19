@@ -21,13 +21,19 @@ from turtlebot_easyprog import sensoren
 from turtlebot_easyprog import bewegen
 from turtlebot_easyprog import aktoren
 
-rospy.init_node('choreo', anonymous=True)
+rospy.init_node('folgefarbe', anonymous=True)
 # Bitte nachfolgend Code
 sensoren.beibumpercrash(bewegen.anhalten)
-bewegen.fahren(0.1,2.0)
-bewegen.drehen(0.5,1.0)
-bewegen.drehen(-0.5,1.0)
-bewegen.kurve(0.5,0.2,2)
-sensoren.beitasteb0(aktoren.led1)
+folgefarbe = sensoren.farbhistogramm()
+bewegen.drehen(1.0,4.0)
+while True:
+    if sensoren.farbeistin4(folgefarbe):#mitte
+        bewegen.fahren(0.1,2.0)
+    elif sensoren.farbeistin3(folgefarbe): #links
+        bewegen.drehen(0.5)
+        bewegen.fahren(0.1,2.0)
+    elif sensoren.farbeistin5(folgefarbe): #rechts
+        bewegen.drehen(-0.5)
+        bewegen.fahren(0.1,2.0)
 #######
 rospy.spin()

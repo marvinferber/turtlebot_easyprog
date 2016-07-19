@@ -15,8 +15,11 @@
 # limitations under the License.
 
 import rospy
+import threading
+import tf
 
 from geometry_msgs.msg import Twist
+from nav_msgs.msg import Odometry
 from types import *
 
 
@@ -80,6 +83,29 @@ def kurve(geschwindigkeit=0.2, drehgeschwindigkeit=1.0, dauer=1.0):
         publisher.publish(twist)   
         r.sleep()
 
+def on_odom(data):
+    global odomdata
+    odomdata=data
+    global event
+    event.set()
+    global odomsubscriber
+    odomsubscriber.unregister()
+    
+
+def positionwinkel():
+    global odomsubscriber
+    odomsubscriber = rospy.Subscriber("/odom", Odometry , on_odom)
+    global event 
+    event = threading.Event()
+    event.wait()
+    global odomdata
+    x = odomdata.pose.pose.position.x
+    y = odomdata.pose.pose.position.y
+    quaternion = (odomdata.pose.pose.orientation.x, odomdata.pose.pose.orientation.y, odomdata.pose.pose.orientation.z, odomdata.pose.pose.orientation.w)
+    euler = tf.transformations.euler_from_quaternion(quaternion)
+    yaw = euler[2]
+    return (x,y,yaw)
+
 def anhalten():
     global anhalten
     anhalten = True
@@ -94,6 +120,7 @@ def anhalten():
 
 if __name__ == '__main__':
     rospy.init_node('bewegen', anonymous=True)
-    drehen(-0.75,2.0)
-    anhalten()
+    print positionwinkel()
+   # drehen(-0.75,2.0)
+   # anhalten()
     
