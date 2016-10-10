@@ -21,13 +21,8 @@ from turtlebot_easyprog import sensoren
 from turtlebot_easyprog import bewegen
 from turtlebot_easyprog import aktoren
 
-rospy.init_node('choreo', anonymous=True)
+rospy.init_node('led', anonymous=True)
 # Bitte nachfolgend Code
-sensoren.beibumpercrash(bewegen.anhalten)
-bewegen.fahren(0.1,2.0)
-bewegen.drehen(0.5,1.0)
-bewegen.drehen(-0.5,1.0)
-bewegen.kurve(0.5,0.2,2)
-sensoren.beitasteb0(aktoren.led1)
+aktoren.led1("rot")
 #######
 rospy.spin()

@@ -1,0 +1,6 @@
+<?xml version="1.0"?>
+
+<launch>
+    <node pkg="turtlesim" type="turtlesim_node" name="turtlesim_test" >
+    </node>
+</launch>

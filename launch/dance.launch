@@ -1,0 +1,8 @@
+<?xml version="1.0"?>
+<launch>
+
+  <node pkg="turtle_dance" type="turtle_dance.py" name="turtle_dance_fileread"  output="screen">
+    <param name="image" value="$(find turtlebot_easyprog)/scripts/TurtleDance.png" />
+    <param name="dances_path" value="$(find turtlebot_easyprog)/dances" />
+  </node>
+</launch>
