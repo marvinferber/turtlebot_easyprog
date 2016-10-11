@@ -121,20 +121,27 @@ def anhalten():
 
 def dreheninrad(drehwinkelrad):
     assert type(drehwinkelrad) is FloatType, "dreheninrad: Drehwinkel %s muss eine Gleitkommazahl sein (z.B. 1.0)" % drehwinkelrad
+    assert drehwinkelrad < 2 * math.pi, "dreheninrad: Drehwinkel %s muss kleiner als 2PI sein (einfache Drehung) " % drehwinkelrad
     global anhalten 
     anhalten = False
     x,y,yawstart = positionwinkel()
     if yawstart < 0.0:
         yawstart = math.pi + yawstart + math.pi 
     yawstop = (yawstart + drehwinkelrad) % (math.pi * 2.0)
-    delta = drehwinkelrad
+    negativ = False
+    if drehwinkelrad < 0.0:
+        negativ = True
+    delta = math.fabs(drehwinkelrad)
     twist = Twist()
     twist.linear.x = 0;                   
     twist.linear.y = 0; 
     twist.linear.z = 0;          
     twist.angular.x = 0; 
     twist.angular.y = 0;   
-    twist.angular.z = delta 
+    if negativ:
+        twist.angular.z = -delta 
+    else:
+        twist.angular.z = delta 
     r = rospy.Rate(10) # 10hz
     while not rospy.is_shutdown() and delta > 0.01 and not anhalten:
         publisher.publish(twist)   
@@ -142,18 +149,25 @@ def dreheninrad(drehwinkelrad):
         x,y,yawaktuell = positionwinkel()
         if yawaktuell < 0.0:
             yawaktuell = math.pi + yawaktuell + math.pi 
-        if yawaktuell > yawstop:
-            delta = 2 * math.pi - yawaktuell + yawstop
+        if negativ: 
+            if yawaktuell > yawstop:
+                delta = yawaktuell - yawstop
+            else:
+                delta = 2 * math.pi - yawstop + yawaktuell
+            twist.angular.z = -delta 
         else:
-            delta = yawstop - yawaktuell
-        twist.angular.z = delta 
+            if yawaktuell > yawstop:
+                delta = 2 * math.pi - yawaktuell + yawstop
+            else:
+                delta = yawstop - yawaktuell
+            twist.angular.z = delta 
         print yawaktuell, yawstop, delta
 
 if __name__ == '__main__':
     rospy.init_node('bewegen', anonymous=True)
     print positionwinkel()
-    dreheninrad(math.pi)
-    dreheninrad(math.pi)
+    dreheninrad(-math.pi)
+    #dreheninrad(math.pi)
    # drehen(-0.75,2.0)
    # anhalten()
     
