@@ -133,6 +133,7 @@ def dreheninrad(drehwinkelrad):
     if drehwinkelrad < 0.0:
         negativ = True
     delta = math.fabs(drehwinkelrad)
+    deltabevor =  math.fabs(drehwinkelrad) + 1
     twist = Twist()
     twist.linear.x = 0                   
     twist.linear.y = 0 
@@ -140,28 +141,29 @@ def dreheninrad(drehwinkelrad):
     twist.angular.x = 0 
     twist.angular.y = 0   
     if negativ:
-        twist.angular.z = -min(delta,1.0) 
+        twist.angular.z = -min(delta + 0.1,1.0) 
     else:
-        twist.angular.z = min(delta,1.0) 
+        twist.angular.z = min(delta + 0.1,1.0) 
     r = rospy.Rate(10) # 10hz
-    while not rospy.is_shutdown() and delta > 0.01 and not anhalten:
+    while not rospy.is_shutdown() and delta < deltabevor and not anhalten:
         publisher.publish(twist)   
         r.sleep()
         x,y,yawaktuell = positionwinkel()
         if yawaktuell < 0.0:
             yawaktuell = math.pi + yawaktuell + math.pi 
+        deltabevor = delta
         if negativ: 
             if yawaktuell > yawstop:
                 delta = yawaktuell - yawstop
             else:
                 delta = 2 * math.pi - yawstop + yawaktuell
-            twist.angular.z = -min(delta,1.0) 
+            twist.angular.z = -min(delta + 0.1,1.0) 
         else:
             if yawaktuell > yawstop:
                 delta = 2 * math.pi - yawaktuell + yawstop
             else:
                 delta = yawstop - yawaktuell
-            twist.angular.z = min(delta,1.0) 
+            twist.angular.z = min(delta + 0.1,1.0) 
         print yawaktuell, yawstop, delta
     twist.angular.z = 0 
     publisher.publish(twist) 
@@ -176,10 +178,10 @@ def fahreninmeter(streckenlaenge):
     yawstart = yaw
     if yawstart < 0.0:
         yawstart = math.pi + yawstart + math.pi
-    deltabevor = streckenlaenge + 1 
+    deltabevor = math.fabs(streckenlaenge) + 1 
     delta = math.fabs(streckenlaenge)
     twist = Twist()
-    twist.linear.x = min(delta,1.0)                   
+    twist.linear.x = min(delta,0.5)                   
     twist.linear.y = 0 
     twist.linear.z = 0          
     twist.angular.x = 0 
