@@ -85,6 +85,48 @@ def kurve(geschwindigkeit=0.2, drehgeschwindigkeit=1.0, dauer=1.0):
         publisher.publish(twist)   
         r.sleep()
 
+def kurvegeschmeidig(geschwindigkeit=0.2, beschleunigung=0.05, drehgeschwindigkeit=1.0, drehbeschleunigung=0.5, dauer=1.0, topic="/cmd_vel_mux/input/teleop"):
+    assert type(drehgeschwindigkeit) is FloatType, "kurve: Drehgeschwindigkeit %s muss eine Gleitkommazahl sein (z.B. 1.0)" % drehgeschwindigkeit
+    assert type(geschwindigkeit) is FloatType, "kurve: Geschwindigkeit %s muss eine Gleitkommazahl sein (z.B. 1.0)" % geschwindigkeit
+    assert type(dauer) is FloatType, "kurve: Dauer %s muss eine Gleitkommazahl sein (z.B. 1.0)" % dauer
+    try:
+        local_publisher
+    except NameError:
+        local_publisher = rospy.Publisher(topic, Twist, queue_size=1) 
+    global anhalten 
+    anhalten = False
+    start = rospy.get_rostime()
+    dauer = rospy.Duration.from_sec(dauer)
+    control_speed = 0
+    control_turn = 0
+    twist = Twist()
+    twist.linear.x = control_speed                   
+    twist.linear.y = 0 
+    twist.linear.z = 0          
+    twist.angular.x = 0 
+    twist.angular.y = 0   
+    twist.angular.z = control_turn
+    r = rospy.Rate(10) # 10hz
+    while not rospy.is_shutdown() and ((start + dauer) > rospy.get_rostime()) and not anhalten:
+        # stepwise TODO fix as sequence of commands
+        if geschwindigkeit > control_speed:
+            control_speed = min( geschwindigkeit, control_speed + beschleunigung )
+        elif geschwindigkeit < control_speed:
+            control_speed = max( geschwindigkeit, control_speed - beschleunigung )
+        else:
+            control_speed = geschwindigkeit
+        # stepwise TODO fix as sequence of commands
+        if drehgeschwindigkeit > control_turn:
+            control_turn = min( drehgeschwindigkeit, control_turn + drehbeschleunigung )
+        elif drehgeschwindigkeit < control_turn:
+            control_turn = max( drehgeschwindigkeit, control_turn - drehbeschleunigung )
+        else:
+            control_turn = drehgeschwindigkeit
+        twist.linear.x = control_speed
+        twist.angular.z = control_turn
+        local_publisher.publish(twist)   
+        r.sleep()
+
 def on_odom(data):
     global odomdata
     odomdata=data
