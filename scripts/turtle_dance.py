@@ -198,7 +198,7 @@ class TurtleDance(QtGui.QWidget):
     tabs = QtGui.QTabWidget()
     tabs.addTab(hboxWidget, "einfach")
     tabs.addTab(hboxMoveWidget, "exakt fahren")
-    tabs.addTab(hboxRotWidget, "exakt rotieren")
+    tabs.addTab(hboxRotWidget, "exakt "+u'\u21BB')
     tabs.currentChanged.connect(self.tabChanged)
     mid = QtGui.QHBoxLayout()
     mid.addWidget(tabs)
@@ -214,9 +214,14 @@ class TurtleDance(QtGui.QWidget):
     vboxLeft.addStretch(1)
     vboxLeft.addLayout(mid)
     #####=======================================================================
+    prgrmLabel = QtGui.QLabel(u"Liste mit Fahrkommandos (Editieren durch Doppelklick)")
+    vboxRight = QtGui.QVBoxLayout()
+    vboxRight.addWidget(prgrmLabel)
+    vboxRight.addWidget(self.programList)
+    #####=======================================================================
     hboxGui = QtGui.QHBoxLayout()
     hboxGui.addLayout(vboxLeft)
-    hboxGui.addWidget(self.programList)
+    hboxGui.addLayout(vboxRight)
     #####=======================================================================
     self.selectedItem = 0
     self.selectedTab = 0
@@ -309,16 +314,16 @@ class TurtleDance(QtGui.QWidget):
     self.deleteButton.setDisabled (False)
     self.tryButton.setDisabled (False)
     self.clearButton.setDisabled (False)
-    index = self.selectedTab
-    if index == 0:
-      self.loadButton.setDisabled (False)
-      self.saveButton.setDisabled (False)
-    elif index == 1:
-      self.loadButton.setDisabled (True)
-      self.saveButton.setDisabled (True)
-    else:
-      self.loadButton.setDisabled (True)
-      self.saveButton.setDisabled (True)
+    #index = self.selectedTab
+    #if index == 0:
+    self.loadButton.setDisabled (False)
+    self.saveButton.setDisabled (False)
+    #elif index == 1:
+    #  self.loadButton.setDisabled (True)
+    #  self.saveButton.setDisabled (True)
+    #else:
+    #  self.loadButton.setDisabled (True)
+    #  self.saveButton.setDisabled (True)
     self.repaint()
   
   ##############################################################################
@@ -339,10 +344,10 @@ class TurtleDance(QtGui.QWidget):
       # put data into liste of steps
       for li in lines:
         # get elements
-        l=li.split()
+        #l=li.split()
         # create item
-        item = QtGui.QListWidgetItem("= vor %s = dreh %s = dauer %s = ( vorBeschl %s , drehBeschl %s )" \
-        %( l[0], l[1], l[2], l[3], l[4] ) ) # neu
+        item = QtGui.QListWidgetItem(li.strip('\n'))#"= vor %s = dreh %s = dauer %s = ( vorBeschl %s , drehBeschl %s )" \
+        #%( l[0], l[1], l[2], l[3], l[4] ) ) # neu
         # add item
         self.programList.addItem(item)
     print "Tanz geladen.\n"
@@ -363,9 +368,9 @@ class TurtleDance(QtGui.QWidget):
           item = self.programList.item(i)
           i += 1
           # write velocities to file
-          s=str(item.text())
-          l=s.split()
-          print >> file, l[2], l[5], l[8], l[12], l[15]
+          #s=str(item.text())
+          #l=s.split()
+          print >> file, item.text() #l[2], l[5], l[8], l[12], l[15]
         file.close()
         print "Tanz gepeichert.\n"
       else:
@@ -373,11 +378,14 @@ class TurtleDance(QtGui.QWidget):
 
   ##############################################################################
 
-  def danceInThread( self, itemlist, topic):
+  def danceInThread( self, topic):
     self.stop = False
     sensoren.beibumpercrash(bewegen.anhalten)
-    i = 0
-    while i < len(itemlist) and not self.stop:
+    if self.selectedItem == self.programList.count()-1:
+        i = 0
+    else:
+        i = self.selectedItem
+    while i < self.programList.count() and not self.stop:
       self.selectedItem = i
       item = self.programList.item(i)
       self.trigger.emit()
@@ -431,14 +439,7 @@ class TurtleDance(QtGui.QWidget):
     # Buttons deaktivieren
     self.tryButton.setDisabled (True)
 
-    itemlist = []
-    i = 0
-    while i < self.programList.count():
-      item = self.programList.item(i)
-      itemlist.append(item)
-      i = i+1
-    
-    start_new_thread(self.danceInThread, (itemlist, topic,))
+    start_new_thread(self.danceInThread, (topic,))
   
   ##############################################################################
 
@@ -567,21 +568,21 @@ class TurtleDance(QtGui.QWidget):
   def tabChanged( self , index):
     self.selectedTab = index
     if index == 0:
-      self.loadButton.setDisabled (False)
-      self.saveButton.setDisabled (False)
+      #self.loadButton.setDisabled (False)
+      #self.saveButton.setDisabled (False)
       self.robotCombo.clear()
       self.robotCombo.addItem("Turtle-Grafik")
       self.robotCombo.addItem("Gazebo-Simulation")
       self.robotCombo.addItem("Echter Roboter")
     elif index == 1:
-      self.loadButton.setDisabled (True)
-      self.saveButton.setDisabled (True)
+      #self.loadButton.setDisabled (True)
+      #self.saveButton.setDisabled (True)
       self.robotCombo.clear()
       self.robotCombo.addItem("Gazebo-Simulation")
       self.robotCombo.addItem("Echter Roboter")
     else:
-      self.loadButton.setDisabled (True)
-      self.saveButton.setDisabled (True)
+      #self.loadButton.setDisabled (True)
+      #self.saveButton.setDisabled (True)
       self.robotCombo.clear()
       self.robotCombo.addItem("Gazebo-Simulation")
       self.robotCombo.addItem("Echter Roboter")

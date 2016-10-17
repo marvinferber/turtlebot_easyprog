@@ -223,7 +223,7 @@ def fahreninmeter(streckenlaenge):
     deltabevor = math.fabs(streckenlaenge) + 1 
     delta = math.fabs(streckenlaenge)
     twist = Twist()
-    twist.linear.x = min(delta,0.5)                   
+    twist.linear.x = math.copysign(min(delta,0.5), streckenlaenge)                   
     twist.linear.y = 0 
     twist.linear.z = 0          
     twist.angular.x = 0 
@@ -238,13 +238,13 @@ def fahreninmeter(streckenlaenge):
             yaw = math.pi + yaw + math.pi   
         deltabevor = delta    
         delta = math.sqrt((zielx - x)**2 + (ziely - y)**2)
-        if twist.linear.x > delta:
-            twist.linear.x = delta
+        if math.fabs(twist.linear.x) > delta:
+            twist.linear.x = math.copysign(delta, streckenlaenge)
         if (yaw < yawstart and (yawstart - yaw) < math.pi):
             twist.angular.z = 0.05
         else: 
             twist.angular.z = -0.05
-        print yawstart,yaw,delta
+        print yawstart, yaw, delta
     twist.angular.z = 0 
     twist.linear.x = 0  
     publisher.publish(twist)
