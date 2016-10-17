@@ -30,8 +30,8 @@ publisher = rospy.Publisher('/cmd_vel_mux/input/teleop', Twist, queue_size=1)
 def drehen(drehgeschwindigkeit=1.0, dauer=1.0):
     assert type(drehgeschwindigkeit) is FloatType, "drehen: Drehgeschwindigkeit %s muss eine Gleitkommazahl sein (z.B. 1.0)" % drehgeschwindigkeit
     assert type(dauer) is FloatType, "drehen: Dauer %s muss eine Gleitkommazahl sein (z.B. 1.0)" % dauer
-    global anhalten 
-    anhalten = False
+    global stop 
+    stop = False
     start = rospy.get_rostime()
     dauer = rospy.Duration.from_sec(dauer)
     twist = Twist()
@@ -42,15 +42,15 @@ def drehen(drehgeschwindigkeit=1.0, dauer=1.0):
     twist.angular.y = 0   
     twist.angular.z = drehgeschwindigkeit
     r = rospy.Rate(10) # 10hz
-    while not rospy.is_shutdown() and ((start + dauer) > rospy.get_rostime()) and not anhalten:
+    while not rospy.is_shutdown() and ((start + dauer) > rospy.get_rostime()) and not stop:
         publisher.publish(twist)   
         r.sleep()
 
 def fahren(geschwindigkeit=0.2, dauer=1.0):
     assert type(geschwindigkeit) is FloatType, "fahren: Geschwindigkeit %s muss eine Gleitkommazahl sein (z.B. 1.0)" % geschwindigkeit
     assert type(dauer) is FloatType, "fahren: Dauer %s muss eine Gleitkommazahl sein (z.B. 1.0)" % dauer
-    global anhalten 
-    anhalten = False
+    global stop 
+    stop = False
     start = rospy.get_rostime()
     dauer = rospy.Duration.from_sec(dauer)
     twist = Twist()
@@ -61,7 +61,7 @@ def fahren(geschwindigkeit=0.2, dauer=1.0):
     twist.angular.y = 0   
     twist.angular.z = 0
     r = rospy.Rate(10) # 10hz
-    while not rospy.is_shutdown() and ((start + dauer) > rospy.get_rostime()) and not anhalten:
+    while not rospy.is_shutdown() and ((start + dauer) > rospy.get_rostime()) and not stop:
         publisher.publish(twist)   
         r.sleep()
 
@@ -69,8 +69,8 @@ def kurve(geschwindigkeit=0.2, drehgeschwindigkeit=1.0, dauer=1.0):
     assert type(drehgeschwindigkeit) is FloatType, "kurve: Drehgeschwindigkeit %s muss eine Gleitkommazahl sein (z.B. 1.0)" % drehgeschwindigkeit
     assert type(geschwindigkeit) is FloatType, "kurve: Geschwindigkeit %s muss eine Gleitkommazahl sein (z.B. 1.0)" % geschwindigkeit
     assert type(dauer) is FloatType, "kurve: Dauer %s muss eine Gleitkommazahl sein (z.B. 1.0)" % dauer
-    global anhalten 
-    anhalten = False
+    global stop 
+    stop = False
     start = rospy.get_rostime()
     dauer = rospy.Duration.from_sec(dauer)
     twist = Twist()
@@ -81,7 +81,7 @@ def kurve(geschwindigkeit=0.2, drehgeschwindigkeit=1.0, dauer=1.0):
     twist.angular.y = 0   
     twist.angular.z = drehgeschwindigkeit
     r = rospy.Rate(10) # 10hz
-    while not rospy.is_shutdown() and ((start + dauer) > rospy.get_rostime()) and not anhalten:
+    while not rospy.is_shutdown() and ((start + dauer) > rospy.get_rostime()) and not stop:
         publisher.publish(twist)   
         r.sleep()
 
@@ -93,8 +93,8 @@ def kurvegeschmeidig(geschwindigkeit=0.2, beschleunigung=0.05, drehgeschwindigke
         local_publisher
     except NameError:
         local_publisher = rospy.Publisher(topic, Twist, queue_size=1) 
-    global anhalten 
-    anhalten = False
+    global stop 
+    stop = False
     start = rospy.get_rostime()
     dauer = rospy.Duration.from_sec(dauer)
     control_speed = 0
@@ -107,7 +107,7 @@ def kurvegeschmeidig(geschwindigkeit=0.2, beschleunigung=0.05, drehgeschwindigke
     twist.angular.y = 0   
     twist.angular.z = control_turn
     r = rospy.Rate(10) # 10hz
-    while not rospy.is_shutdown() and ((start + dauer) > rospy.get_rostime()) and not anhalten:
+    while not rospy.is_shutdown() and ((start + dauer) > rospy.get_rostime()) and not stop:
         # stepwise TODO fix as sequence of commands
         if geschwindigkeit > control_speed:
             control_speed = min( geschwindigkeit, control_speed + beschleunigung )
@@ -151,8 +151,8 @@ def positionwinkel():
     return (x,y,yaw)
 
 def anhalten():
-    global anhalten
-    anhalten = True
+    global stop
+    stop = True
     twist = Twist()
     twist.linear.x = 0                   
     twist.linear.y = 0 
@@ -165,8 +165,8 @@ def anhalten():
 def dreheninrad(drehwinkelrad):
     assert type(drehwinkelrad) is FloatType, "dreheninrad: Drehwinkel %s muss eine Gleitkommazahl sein (z.B. 1.0)" % drehwinkelrad
     assert drehwinkelrad < 2 * math.pi, "dreheninrad: Drehwinkel %s muss kleiner als 2PI sein (einfache Drehung) " % drehwinkelrad
-    global anhalten 
-    anhalten = False
+    global stop 
+    stop = False
     x,y,yawstart = positionwinkel()
     if yawstart < 0.0:
         yawstart = math.pi + yawstart + math.pi 
@@ -187,7 +187,7 @@ def dreheninrad(drehwinkelrad):
     else:
         twist.angular.z = min(delta + 0.1,1.0) 
     r = rospy.Rate(10) # 10hz
-    while not rospy.is_shutdown() and delta < deltabevor and not anhalten:
+    while not rospy.is_shutdown() and delta < deltabevor and not stop:
         publisher.publish(twist)   
         r.sleep()
         x,y,yawaktuell = positionwinkel()
@@ -212,8 +212,8 @@ def dreheninrad(drehwinkelrad):
 
 def fahreninmeter(streckenlaenge):
     assert type(streckenlaenge) is FloatType, "fahren: streckenlaenge %s muss eine Gleitkommazahl sein (z.B. 1.0)" % streckenlaenge
-    global anhalten 
-    anhalten = False
+    global stop 
+    stop = False
     x,y,yaw = positionwinkel()
     zielx = math.cos(yaw) * streckenlaenge + x
     ziely = math.sin(yaw) * streckenlaenge + y
@@ -230,7 +230,7 @@ def fahreninmeter(streckenlaenge):
     twist.angular.y = 0   
     twist.angular.z = 0
     r = rospy.Rate(10) # 10hz
-    while not rospy.is_shutdown() and delta < deltabevor and not anhalten:
+    while not rospy.is_shutdown() and delta < deltabevor and not stop:
         publisher.publish(twist)   
         r.sleep()
         x,y,yaw = positionwinkel()  
@@ -261,5 +261,5 @@ if __name__ == '__main__':
     fahreninmeter(1.0)
     dreheninrad(-math.pi/2)
    # drehen(-0.75,2.0)
-   # anhalten()
+   # stop()
     

@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-# Copyright 2016 Katja Fiedler, Claudia Buhl
+# Copyright 2016 Katja Fiedler, Claudia Buhl, Marvin Ferber
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ from geometry_msgs.msg import Twist
 import select 
 import time
 import turtlebot_easyprog.bewegen as bewegen
+import turtlebot_easyprog.sensoren as sensoren
 from thread import start_new_thread
 import math
 
@@ -112,36 +113,41 @@ class TurtleDance(QtGui.QWidget):
     durLabel = QtGui.QLabel(u"Dauer der Bewegung (Sekunden):")
     #####=======================================================================
     # buttons for single step design
-    bw = 80 # button height
-    addAButton = QtGui.QPushButton(u'Einfügen\n danach')
-    addAButton.setFixedWidth(bw)
-    addAButton.clicked.connect(self.addStepAfter)
-    addAButton.setToolTip(u'Schritt danach hinzufügen') #neu
+    bw = 90 # button height
+    self.addAButton = QtGui.QPushButton(u'Einfügen\n danach')
+    self.addAButton.setFixedWidth(bw)
+    self.addAButton.clicked.connect(self.addStepAfter)
+    self.addAButton.setToolTip(u'Schritt danach hinzufügen') #neu
     # add new step before current line
-    addBButton = QtGui.QPushButton(u'Einfügen\n davor')
-    addBButton.setFixedWidth(bw)
-    addBButton.clicked.connect(self.addStepBefore)
-    addBButton.setToolTip(u'Schritt davor hinzufügen') #neu
+    self.addBButton = QtGui.QPushButton(u'Einfügen\n davor')
+    self.addBButton.setFixedWidth(bw)
+    self.addBButton.clicked.connect(self.addStepBefore)
+    self.addBButton.setToolTip(u'Schritt davor hinzufügen') #neu
     # delete to selected steps
-    deleteButton = QtGui.QPushButton("entfernen")
-    deleteButton.setFixedWidth(bw)
-    deleteButton.clicked.connect(self.deleteStep)
-    deleteButton.setToolTip(u'Schritt entfernen') #neu
+    self.deleteButton = QtGui.QPushButton("entfernen")
+    self.deleteButton.setFixedWidth(bw)
+    self.deleteButton.clicked.connect(self.deleteStep)
+    self.deleteButton.setToolTip(u'Schritt entfernen') #neu
+    # Tanz anhalten Button
+    self.stopButton = QtGui.QPushButton(u'Tanz\n abbrechen')
+    self.stopButton.setFixedWidth(bw)
+    self.stopButton.clicked.connect(self.stopDance)
+    self.stopButton.setToolTip(u'Hält den Tanz an')
+    self.stopButton.setDisabled(True)
     #####=======================================================================
     # buttons for manipulation of dance 
-    butW=80
     self.loadButton = QtGui.QPushButton("Lade\nTanz")
-    self.loadButton.setFixedWidth(butW)
+    self.loadButton.setFixedWidth(bw)
     self.loadButton.clicked.connect(self.loadDance)
     self.tryButton = QtGui.QPushButton("Probiere\nTanz")
-    self.tryButton.setFixedWidth(butW)
+    self.tryButton.setFixedWidth(bw)
     self.tryButton.clicked.connect(self.tryDance)
     self.saveButton = QtGui.QPushButton("Speichere\nTanz")
-    self.saveButton.setFixedWidth(butW)
+    self.saveButton.setFixedWidth(bw)
     self.saveButton.clicked.connect(self.saveDance)
-    clearButton = QtGui.QPushButton(u"Lösche\nEntwurf")
-    clearButton.setFixedWidth(butW)
-    clearButton.clicked.connect(self.clearList)
+    self.clearButton = QtGui.QPushButton(u"Lösche\nEntwurf")
+    self.clearButton.setFixedWidth(bw)
+    self.clearButton.clicked.connect(self.clearList)
     #####=======================================================================
     # select platform
     self.robotCombo = QtGui.QComboBox()
@@ -182,11 +188,12 @@ class TurtleDance(QtGui.QWidget):
     hboxMid.addWidget(self.tryButton,0,2)
     hboxMid.addWidget(self.loadButton,1,2)
     hboxMid.addWidget(self.saveButton,2,2)
-    hboxMid.addWidget(clearButton,3,2)
+    hboxMid.addWidget(self.clearButton,3,2)
     #####=======================================================================
-    hboxMid.addWidget(addAButton,1,1)
-    hboxMid.addWidget(addBButton,2,1)
-    hboxMid.addWidget(deleteButton,3,1)
+    hboxMid.addWidget(self.stopButton,0,1)
+    hboxMid.addWidget(self.addAButton,1,1)
+    hboxMid.addWidget(self.addBButton,2,1)
+    hboxMid.addWidget(self.deleteButton,3,1)
     #####=======================================================================
     tabs = QtGui.QTabWidget()
     tabs.addTab(hboxWidget, "einfach")
@@ -279,35 +286,6 @@ class TurtleDance(QtGui.QWidget):
       self.programList.addItem(item)
 
   ##############################################################################
- 
-  # if item of dance list selected, use its values for spinbox settings
-  def loadStep( self ):
-    # get content of current description in list
-    ind = self.programList.selectedIndexes()
-    if len( ind )>0:
-      # split
-      s = str(ind[0].data().toString())
-      l=s.split()
-      # get values
-      self.vxSpin.setValue( float( l[2] ) )
-      self.vzSpin.setValue( float( l[5] ) )
-      self.durSpin.setValue( float( l[8] ) )
-
-  ##############################################################################
-  
-  # if item in dance list selected, 
-  # substitute it by current dance settings from spinboxes
-  def changeStep( self ):
-    # prepare step description
-    item = QtCore.QString("= vor %.2f = dreh %.2f = dauer %.2f = ( vorBeschl %.2f , drehBeschl %.2f )" %( \
-    self.vxSpin.value(), self.vzSpin.value(), self.durSpin.value(), self.xAccCurr, self.rAccCurr )) # neu# TODO
-    # get index of current list item (we can only select one)
-    it = self.programList.selectedItems()
-    # write text to current list item
-    if len( it ) > 0:
-      it[0].setText( item ) 
-
-  ##############################################################################
   
   # delete currently selected step, if any
   def deleteStep( self ):
@@ -316,6 +294,32 @@ class TurtleDance(QtGui.QWidget):
     # remove the current list item
     if len( ind ) > 0:
       self.programList.takeItem(ind[0].row()) 
+  
+  ##############################################################################
+
+  # Tanz anhalten
+  def stopDance( self ):
+    # stop dance
+    self.stop = True
+    bewegen.anhalten()
+    # Buttons restore
+    self.stopButton.setDisabled (True)
+    self.addAButton.setDisabled (False)
+    self.addBButton.setDisabled (False)
+    self.deleteButton.setDisabled (False)
+    self.tryButton.setDisabled (False)
+    self.clearButton.setDisabled (False)
+    index = self.selectedTab
+    if index == 0:
+      self.loadButton.setDisabled (False)
+      self.saveButton.setDisabled (False)
+    elif index == 1:
+      self.loadButton.setDisabled (True)
+      self.saveButton.setDisabled (True)
+    else:
+      self.loadButton.setDisabled (True)
+      self.saveButton.setDisabled (True)
+    self.repaint()
   
   ##############################################################################
  
@@ -370,8 +374,10 @@ class TurtleDance(QtGui.QWidget):
   ##############################################################################
 
   def danceInThread( self, itemlist, topic):
+    self.stop = False
+    sensoren.beibumpercrash(bewegen.anhalten)
     i = 0
-    while i < len(itemlist):
+    while i < len(itemlist) and not self.stop:
       self.selectedItem = i
       item = self.programList.item(i)
       self.trigger.emit()
@@ -396,12 +402,21 @@ class TurtleDance(QtGui.QWidget):
     
     time.sleep(0.5)
     print "Tanz ist fertig!\n"
-    self.tryButton.setDisabled (False)
+    self.stop = True
+    self.trigger.emit()
 
   ##############################################################################
 
   # execute dance steps from file on current robot
   def tryDance( self ):
+    # Buttons disable
+    self.stopButton.setDisabled (False)
+    self.addAButton.setDisabled (True)
+    self.addBButton.setDisabled (True)
+    self.deleteButton.setDisabled (True)
+    self.loadButton.setDisabled (True)
+    self.saveButton.setDisabled (True)
+    self.clearButton.setDisabled (True)
     # type of robot
     print u"Gewählte Plattform:", str(self.robotCombo.currentText())
     pltf=str(self.robotCombo.currentText()) 
@@ -428,6 +443,8 @@ class TurtleDance(QtGui.QWidget):
   ##############################################################################
 
   def updateUI ( self ):
+    if self.stop :
+        self.stopDance()
     item = self.programList.item(self.selectedItem)
     item.setSelected(True)
     self.programList.setFocus()
