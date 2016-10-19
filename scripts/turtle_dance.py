@@ -199,7 +199,7 @@ class TurtleDance(QtGui.QWidget):
     tabs.addTab(hboxWidget, "einfach")
     tabs.addTab(hboxMoveWidget, "exakt fahren")
     tabs.addTab(hboxRotWidget, "exakt "+u'\u21BB')
-    tabs.currentChanged.connect(self.tabChanged)
+    #tabs.currentChanged.connect(self.tabChanged)
     mid = QtGui.QHBoxLayout()
     mid.addWidget(tabs)
     mid.addLayout(hboxMid)
@@ -377,10 +377,16 @@ class TurtleDance(QtGui.QWidget):
         print "Keine Schritte vorhanden!\n"
 
   ##############################################################################
+  def obstacleHit( self ):
+    print "Hindernis -- > Stop"
+    bewegen.anhalten()
+    self.stop = True
+
+  ##############################################################################
 
   def danceInThread( self):
     self.stop = False
-    sensoren.beibumpercrash(bewegen.anhalten)
+    sensoren.beibumpercrash(self.obstacleHit)
     if self.selectedItem == self.programList.count()-1:
         i = 0
     else:
