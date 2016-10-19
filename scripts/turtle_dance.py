@@ -19,7 +19,7 @@ import sys, os
 from PyQt4 import QtGui, QtCore
 import rospy
 from geometry_msgs.msg import Twist
-import select 
+import select
 import time
 import turtlebot_easyprog.bewegen as bewegen
 import turtlebot_easyprog.sensoren as sensoren
@@ -28,8 +28,8 @@ import math
 
 
 class ChangeWid( QtGui.QWidget ): #neu
-  
-  def __init__(self):  
+
+  def __init__(self):
     super(ChangeWid, self).__init__()
 
 ######################
@@ -38,13 +38,13 @@ class ChangeWid( QtGui.QWidget ): #neu
 
 
 class TurtleDance(QtGui.QWidget):
-  
-  trigger = QtCore.pyqtSignal() 
-  
+
+  trigger = QtCore.pyqtSignal()
+
   def __init__(self):
     super(TurtleDance, self).__init__()
     self.initUI()
-  
+
   def initUI(self):
     # ros stuff
     rospy.init_node('turtle_dance')
@@ -59,7 +59,7 @@ class TurtleDance(QtGui.QWidget):
     #####=======================================================================
     #####== create GUI elements ================================================
     #####=======================================================================
-    # dummy for space 
+    # dummy for space
     empty = QtGui.QLabel("\n")
     # logo in label
     pic = QtGui.QLabel()
@@ -105,7 +105,7 @@ class TurtleDance(QtGui.QWidget):
     self.durSpin.setRange(0,5.0)
     self.durSpin.setSingleStep(0.1)
     #####=======================================================================
-    # label for spinboxes 
+    # label for spinboxes
     vxLabel = QtGui.QLabel(u"Fahren: vorwärts(+)/rückwärts(-)")
     vx1Label = QtGui.QLabel(u"Fahren: vorwärts(+)/rückwärts(-)")
     vzLabel = QtGui.QLabel(u"Drehen: links(+)/rechts(-)")
@@ -135,7 +135,7 @@ class TurtleDance(QtGui.QWidget):
     self.stopButton.setToolTip(u'Hält den Tanz an')
     self.stopButton.setDisabled(True)
     #####=======================================================================
-    # buttons for manipulation of dance 
+    # buttons for manipulation of dance
     self.loadButton = QtGui.QPushButton("Lade\nTanz")
     self.loadButton.setFixedWidth(bw)
     self.loadButton.clicked.connect(self.loadDance)
@@ -226,10 +226,10 @@ class TurtleDance(QtGui.QWidget):
     self.selectedItem = 0
     self.selectedTab = 0
 
-    self.setLayout(hboxGui)    
+    self.setLayout(hboxGui)
 
     self.setGeometry(50, 50, 1000, 800)
-    self.setWindowTitle('TurtleDance')    
+    self.setWindowTitle('TurtleDance')
     self.setFixedSize( self.sizeHint() )
     self.layout().setSizeConstraint( QtGui.QLayout.SetFixedSize )
     self.show()
@@ -237,13 +237,13 @@ class TurtleDance(QtGui.QWidget):
     print u"\nViel Spaß!\n"
 
   ##############################################################################
-  
+
   # remove all items from dance list
   def clearList( self ):
     self.programList.clear()
 
   ##############################################################################
- 
+
   # create step from current spinbox settings and
   # add before currently selected item
   # (or at the end, if nothing selected)
@@ -258,7 +258,7 @@ class TurtleDance(QtGui.QWidget):
       item = QtGui.QListWidgetItem("= exakt dreh %.2f " %( self.rotSpin.value())) # neu
     # get selected index
     ind = self.programList.selectedIndexes()
-    # if somethings is selected 
+    # if somethings is selected
     if len( ind ) > 0:
       # add behind current position
       self.programList.insertItem(ind[0].row(), item )
@@ -267,7 +267,7 @@ class TurtleDance(QtGui.QWidget):
       self.programList.addItem(item)
 
   ##############################################################################
-  
+
   # create step from current spinbox settings and
   # add after currently selected item
   # (or at the end, if nothing selected)
@@ -282,7 +282,7 @@ class TurtleDance(QtGui.QWidget):
       item = QtGui.QListWidgetItem("= exakt dreh %.2f " %( self.rotSpin.value())) # neu
     # get selected index
     ind = self.programList.selectedIndexes()
-    # if somethings is selected 
+    # if somethings is selected
     if len( ind ) > 0:
       # add behind current position
       self.programList.insertItem(ind[0].row()+1, item )
@@ -291,15 +291,15 @@ class TurtleDance(QtGui.QWidget):
       self.programList.addItem(item)
 
   ##############################################################################
-  
+
   # delete currently selected step, if any
   def deleteStep( self ):
     # get index of current list item (we can only select one)
     ind = self.programList.selectedIndexes()
     # remove the current list item
     if len( ind ) > 0:
-      self.programList.takeItem(ind[0].row()) 
-  
+      self.programList.takeItem(ind[0].row())
+
   ##############################################################################
 
   # Tanz anhalten
@@ -325,9 +325,9 @@ class TurtleDance(QtGui.QWidget):
     #  self.loadButton.setDisabled (True)
     #  self.saveButton.setDisabled (True)
     self.repaint()
-  
+
   ##############################################################################
- 
+
   # load list of steps from desired file
   def loadDance( self ):
     # get filename and open
@@ -378,7 +378,7 @@ class TurtleDance(QtGui.QWidget):
 
   ##############################################################################
 
-  def danceInThread( self, topic):
+  def danceInThread( self):
     self.stop = False
     sensoren.beibumpercrash(bewegen.anhalten)
     if self.selectedItem == self.programList.count()-1:
@@ -396,18 +396,18 @@ class TurtleDance(QtGui.QWidget):
           pub_dur = float(l[8])
           acc_speed = float(l[12])
           acc_turn  = float(l[15])
-          rospy.loginfo ("Zielgeschwindigkeiten: vor = %.2f; dreh = %.2f; Dauer = %.2fs; ", target_speed, target_turn, pub_dur);
-          bewegen.kurvegeschmeidig(target_speed, acc_speed, target_turn, acc_turn, pub_dur, topic)
+          rospy.loginfo ("Zielgeschwindigkeiten: vor = %.2f; dreh = %.2f; Dauer = %.2fs; ", target_speed, target_turn, pub_dur)
+          bewegen.kurvegeschmeidig(target_speed, acc_speed, target_turn, acc_turn, pub_dur)
       elif "exakt vor" in  str(item.text()): # exakt fahren
           target_length = float(l[3])
-          rospy.loginfo ("Streckenlänge: %.2f", target_length);
+          rospy.loginfo ("Streckenlänge: %.2f", target_length)
           bewegen.fahreninmeter(target_length)
       else: # exakt drehen
           target_turn = float(l[3])
-          rospy.loginfo ("Drehwinkel: %.2f", target_turn);
+          rospy.loginfo ("Drehwinkel: %.2f", target_turn)
           bewegen.dreheninrad(target_turn)
       i = i+1
-    
+
     time.sleep(0.5)
     print "Tanz ist fertig!\n"
     self.stop = True
@@ -427,33 +427,34 @@ class TurtleDance(QtGui.QWidget):
     self.clearButton.setDisabled (True)
     # type of robot
     print u"Gewählte Plattform:", str(self.robotCombo.currentText())
-    pltf=str(self.robotCombo.currentText()) 
+    pltf=str(self.robotCombo.currentText())
+
     if pltf == "Turtle-Grafik":
-      topic = "/turtle1/cmd_vel"
+      pass #topic = "/turtle1/cmd_vel"
     elif pltf == "Gazebo-Simulation":
-      topic = "/mobile_base/commands/velocity"
+      pass #topic = "/mobile_base/commands/velocity"
     else:
-      topic = "/mobile_base/commands/velocity"
-    print "   topic name: ", topic
+      pass #topic = "/mobile_base/commands/velocity"
 
     # Buttons deaktivieren
     self.tryButton.setDisabled (True)
 
-    start_new_thread(self.danceInThread, (topic,))
-  
+    start_new_thread(self.danceInThread, ())
+
   ##############################################################################
 
   def updateUI ( self ):
     if self.stop :
         self.stopDance()
     item = self.programList.item(self.selectedItem)
-    item.setSelected(True)
+    if item is not None:
+        item.setSelected(True)
     self.programList.setFocus()
     self.repaint()
 
   ##############################################################################
 
-  # apply change in acceleration 
+  # apply change in acceleration
   def applyAcc( self ): # neu
     # read old values
     ind = self.programList.selectedIndexes()
@@ -467,7 +468,7 @@ class TurtleDance(QtGui.QWidget):
       self.durSpin.setValue( float( l[8] ) )
     # prepare new step description
     item = QtCore.QString("= vor %.2f = dreh %.2f = dauer %.2f = ( vorBeschl %.2f , drehBeschl %.2f )" %( \
-    self.xlinSpin.value(), self.xrotSpin.value(), self.xdurSpin.value(), self.xAccSpin.value(), self.rAccSpin.value() )) 
+    self.xlinSpin.value(), self.xrotSpin.value(), self.xdurSpin.value(), self.xAccSpin.value(), self.rAccSpin.value() ))
     # get index of current list item (we can only select one)
     it = self.programList.selectedItems()
     # write text to current list item
@@ -544,50 +545,50 @@ class TurtleDance(QtGui.QWidget):
     cwLayout.addWidget(self.xAccSpin)
     cwLayout.addWidget(rAccLabel)
     cwLayout.addWidget(self.rAccSpin)
-    
+
     btLayout = QtGui.QHBoxLayout()
-    
+
     abButton = QtGui.QPushButton("Abbrechen")
     abButton.clicked.connect(self.cw.close)
     abButton.setToolTip(u'Bisherige Beschleunigung beibehalten') #neu
     okButton = QtGui.QPushButton(u"Übernehmen")
     okButton.clicked.connect(self.applyAcc)
     okButton.setToolTip(u'Setze neue Beschleunigung') #neu
-   
+
     btLayout.addWidget(abButton)
     btLayout.addWidget(okButton)
 
     cwLayout.addLayout(btLayout)
     self.cw.setLayout(cwLayout)
-    
-    
+
+
     self.cw.show()
 
   ##############################################################################
-  
+
   def tabChanged( self , index):
     self.selectedTab = index
-    if index == 0:
-      #self.loadButton.setDisabled (False)
-      #self.saveButton.setDisabled (False)
-      self.robotCombo.clear()
-      self.robotCombo.addItem("Turtle-Grafik")
-      self.robotCombo.addItem("Gazebo-Simulation")
-      self.robotCombo.addItem("Echter Roboter")
-    elif index == 1:
-      #self.loadButton.setDisabled (True)
-      #self.saveButton.setDisabled (True)
-      self.robotCombo.clear()
-      self.robotCombo.addItem("Gazebo-Simulation")
-      self.robotCombo.addItem("Echter Roboter")
-    else:
-      #self.loadButton.setDisabled (True)
-      #self.saveButton.setDisabled (True)
-      self.robotCombo.clear()
-      self.robotCombo.addItem("Gazebo-Simulation")
-      self.robotCombo.addItem("Echter Roboter")
+    # if index == 0:
+    #self.loadButton.setDisabled (False)
+    #self.saveButton.setDisabled (False)
+    self.robotCombo.clear()
+    self.robotCombo.addItem("Turtle-Grafik")
+    self.robotCombo.addItem("Gazebo-Simulation")
+    self.robotCombo.addItem("Echter Roboter")
+    # elif index == 1:
+    #   #self.loadButton.setDisabled (True)
+    #   #self.saveButton.setDisabled (True)
+    #   self.robotCombo.clear()
+    #   self.robotCombo.addItem("Gazebo-Simulation")
+    #   self.robotCombo.addItem("Echter Roboter")
+    # else:
+    #   #self.loadButton.setDisabled (True)
+    #   #self.saveButton.setDisabled (True)
+    #   self.robotCombo.clear()
+    #   self.robotCombo.addItem("Gazebo-Simulation")
+    #   self.robotCombo.addItem("Echter Roboter")
     self.repaint()
-      
+
 
 ###########################################################
 
