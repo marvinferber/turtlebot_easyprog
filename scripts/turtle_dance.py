@@ -199,7 +199,7 @@ class TurtleDance(QtGui.QWidget):
     tabs.addTab(hboxWidget, "einfach")
     tabs.addTab(hboxMoveWidget, "exakt fahren")
     tabs.addTab(hboxRotWidget, "exakt "+u'\u21BB')
-    #tabs.currentChanged.connect(self.tabChanged)
+    tabs.currentChanged.connect(self.tabChanged)
     mid = QtGui.QHBoxLayout()
     mid.addWidget(tabs)
     mid.addLayout(hboxMid)
@@ -577,10 +577,10 @@ class TurtleDance(QtGui.QWidget):
     # if index == 0:
     #self.loadButton.setDisabled (False)
     #self.saveButton.setDisabled (False)
-    self.robotCombo.clear()
-    self.robotCombo.addItem("Turtle-Grafik")
-    self.robotCombo.addItem("Gazebo-Simulation")
-    self.robotCombo.addItem("Echter Roboter")
+    #self.robotCombo.clear()
+    #self.robotCombo.addItem("Turtle-Grafik")
+    #self.robotCombo.addItem("Gazebo-Simulation")
+    #self.robotCombo.addItem("Echter Roboter")
     # elif index == 1:
     #   #self.loadButton.setDisabled (True)
     #   #self.saveButton.setDisabled (True)
@@ -593,7 +593,7 @@ class TurtleDance(QtGui.QWidget):
     #   self.robotCombo.clear()
     #   self.robotCombo.addItem("Gazebo-Simulation")
     #   self.robotCombo.addItem("Echter Roboter")
-    self.repaint()
+    #self.repaint()
 
 
 ###########################################################
