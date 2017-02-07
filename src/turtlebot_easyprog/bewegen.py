@@ -269,17 +269,19 @@ def fahreninmeter(streckenlaenge):
 
     print "z", zielx, ziely
 
-    delta = abs(streckenlaenge)
-    delta_davor = delta + 1
+    fahrstrecke = 0
     twist = Twist()
     twist.linear.z = 0.2
     publisher.publish(twist)
 
     r = rospy.Rate(10)  # 10hz
     while not rospy.is_shutdown() and not stop:
+        xalt = x
+        yalt = y
         x, y, yaw = positionwinkel()
-        delta = pos_delta(zielx, ziely, x, y)
-        if delta > delta_davor:
+        fahrstrecke = fahrstrecke + pos_delta(x, y, xalt, yalt)
+        print fahrstrecke
+        if fahrstrecke > abs(streckenlaenge):
             break
         delta_yaw = angle_delta(yaw, yawstart)
         # korrekturfaktor abhängig von rate
@@ -290,28 +292,131 @@ def fahreninmeter(streckenlaenge):
         else:
             twist.angular.z = 0
 
-        twist.linear.x = np.sign(streckenlaenge) * max(0.1, min(0.95, delta))
+        twist.linear.x = 0.1 * np.sign(streckenlaenge)
+        publisher.publish(twist)
+        r.sleep()
+
+    print "done", x, y, yaw
+    # anhalten
+    twist.angular.z = 0
+    twist.linear.x = 0
+    publisher.publish(twist)
+
+def fahrenstrecke(streckenlaenge, winkel):
+    assert type(
+        streckenlaenge) is FloatType, "fahren: streckenlaenge %s muss eine Gleitkommazahl sein (z.B. 1.0)" % streckenlaenge
+    global stop
+    stop = False
+
+    x, y, yaw = positionwinkel()
+
+    print "c", x, y, yaw
+
+    yawstart = yaw + winkel
+
+    fahrstrecke = 0
+    twist = Twist()
+    
+    r = rospy.Rate(10)  # 10hz
+    while not rospy.is_shutdown() and not stop:
+        xalt = x
+        yalt = y
+        x, y, yaw = positionwinkel()
+        fahrstrecke = fahrstrecke + pos_delta(x, y, xalt, yalt)
+        #print fahrstrecke
+        if fahrstrecke > abs(streckenlaenge):
+            break
+        delta_yaw = angle_delta(yaw, yawstart)
+        # korrekturfaktor 
+        delta_yaw = delta_yaw * 2
+        print delta_yaw
+
+        if abs(delta_yaw) > 0.05:
+            twist.angular.z = delta_yaw
+        else:
+            twist.angular.z = 0
+
+        twist.linear.x = 0.2 * np.sign(streckenlaenge)
+        publisher.publish(twist)
+        r.sleep()
+
+    print "done", x, y, yaw
+    # anhalten
+    #twist.angular.z = 0
+    #twist.linear.x = 0
+    #publisher.publish(twist)
+
+def fahrenposition(zielx, ziely):
+    """
+     Ermöglicht das Ansteuern einer absoluten Position. Die aktuelle Position wird über 
+     positionwinkel() bestimmt und entsprechend wird die Zielposition in diesem 
+     Koordinatensystem angefahren. (Aktuell /odom --> Drift über Fahrstrecke)
+    """
+    assert type(zielx) is FloatType, "zielx %s muss eine Gleitkommazahl sein (z.B. 1.0)" % zielx
+    assert type(ziely) is FloatType, "ziely %s muss eine Gleitkommazahl sein (z.B. 1.0)" % ziely    
+    global stop
+    stop = False
+
+    x, y, yaw = positionwinkel()
+
+    print "c", x, y, yaw
+
+    print "z", zielx, ziely
+
+    delta = pos_delta(zielx, ziely, x, y)
+    delta_davor = delta + 1
+    twist = Twist()
+    
+    r = rospy.Rate(10)  # 10hz
+    while not rospy.is_shutdown() and not stop:
+        x, y, yaw = positionwinkel()
+        delta = pos_delta(zielx, ziely, x, y)
+        # Abbruch der Beweung, wenn nahe am Ziel und sich wieder entfernt
+        if (delta < 0.1) and (delta > delta_davor):
+            break
+        # winkel beta der Strecke Roboter --> Zielpunkte (Unterscheidung 4 Quadranten)
+        beta = np.sign(ziely -y) *  (math.pi - math.atan(abs((ziely -y)/(zielx - x))) if (zielx-x)<0 else math.atan(abs((ziely -y)/(zielx - x))))
+        # winkel zwischen beta und Roboterorientierung 
+        delta_yaw = angle_delta( yaw, beta)
+        print delta_yaw, delta, beta
+        # nahe am Ziel Drehgeschwindigkeit deaktivieren, um Starke Rotation zu vermeiden
+        if abs(delta_yaw) > 0.05 and (delta > 0.1):
+            twist.angular.z = delta_yaw
+        else:
+            twist.angular.z = 0
+        # max 0.2 und min 0.1 m/s 
+        twist.linear.x = max(min(0.2, delta),0.1)
         publisher.publish(twist)
         delta_davor = delta + 0.0001
         r.sleep()
 
     print "done", delta, delta_davor
     print "done", x, y, yaw
-    twist.angular.z = 0
-    twist.linear.x = 0
-    publisher.publish(twist)
 
+def PointsInCircum(r,n=100):
+    return [(math.cos(2*math.pi/n*x)*r,math.sin(2*math.pi/n*x)*r) for x in xrange(0,n+1)]    
 
 if __name__ == '__main__':
     rospy.init_node('bewegen', anonymous=True)
-    print positionwinkel()
-    fahreninmeter(1.0)
-    dreheninrad(-math.pi / 2)
-    fahreninmeter(1.0)
-    dreheninrad(-math.pi / 2)
-    fahreninmeter(1.0)
-    dreheninrad(-math.pi / 2)
-    fahreninmeter(1.0)
-    dreheninrad(-math.pi / 2)
+    publisher = rospy.Publisher('/cmd_vel_mux/input/teleop', Twist, queue_size=1) 
+    global_state.odom_sub = rospy.Subscriber("/odom", Odometry, on_odom, queue_size=1)
+    for (x,y) in PointsInCircum(1.0,20):
+        fahrenposition(x,y)
+#    fahreninmeter(1.0)
+#    dreheninrad(-math.pi / 2)
+#    fahreninmeter(1.0)
+#    dreheninrad(-math.pi / 2)
+#    fahreninmeter(1.0)
+#    dreheninrad(-math.pi / 2)
+#    fahrenposition(1.5, math.pi/4)
+#    fahrenposition(1.0, 1.0)
+#    fahrenposition(1.0, 2.0)
+#    fahrenposition(0.0, 3.0)
+#    fahrenposition(0.0, 1.0)
+#    fahrenposition(0.0, 0.0)
+#    fahrenposition(0.1, -math.pi/8)
+#    fahrenposition(0.1, -math.pi/8)
+#    fahrenposition(0.1, -math.pi/8)
+#    dreheninrad(-math.pi / 2)
     # drehen(-0.75,2.0)
     # stop()
